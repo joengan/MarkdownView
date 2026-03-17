@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown 閱讀器</title>
+    <link rel="stylesheet" href="libs/github-markdown-css/5.9.0/github-markdown.css">
+    <link rel="stylesheet" href="libs/highlightjs/11.11.1/github.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="libs/dompurify/3.3.3/purify.min.js"></script>
+    <script src="libs/mermaid/11.12.0/mermaid.min.js"></script>
+</head>
+
+<body>
+    <div class="toolbar">
+        <span class="filename" id="fileNameDisplay">載入中...</span>
+        <a href="#" id="downloadBtn" class="btn-download">下載檔案</a>
+    </div>
+    <div id="content" class="markdown-body">
+        <p>初始化中...</p>
+    </div>
+    <script>
+        (() => {
+            const contentElement = document.getElementById('content');
+            const fileNameDisplay = document.getElementById('fileNameDisplay');
+
+            const showError = (error) => {
+                const message = error?.message || String(error);
+                fileNameDisplay.textContent = '載入失敗';
+                contentElement.innerHTML = `<h1>錯誤</h1><p>${message}</p>`;
+            };
+
+            window.addEventListener('error', (event) => {
+                showError(event.error || event.message || '未知錯誤');
+            });
+
+            window.addEventListener('unhandledrejection', (event) => {
+                showError(event.reason || '未處理的 Promise 錯誤');
+            });
+
+            import('./script.js').catch(showError);
+        })();
+    </script>
+</body>
+
+</html>
