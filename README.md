@@ -1,0 +1,2 @@
+主要用於IIS內網開啟目錄檢視時,架設於IIS,方便直接查看Markdown文件之用。
+web.config是目錄檢視那邊需要新增關於Markdown的內容。
