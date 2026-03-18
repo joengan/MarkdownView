@@ -223,13 +223,14 @@ body {
     vertical-align: middle;
 }
 
-.inline-code-wrapper::after {
+.inline-code-wrapper::before {
     content: '';
     position: absolute;
     top: 0;
-    left: 100%;
-    width: 64px;
-    height: 100%;
+    left: 0;
+    transform: translate(-6px, -100%);
+    width: 45px;
+    height: calc(100% + 2px);
 }
 
 .inline-code-wrapper code {
@@ -271,8 +272,8 @@ body {
 .inline-code-wrapper .copy-code-btn {
     position: absolute;
     top: 0;
-    left: 100%;
-    transform: translateX(6px);
+    left: 0;
+    transform: translate(-6px, -100%);
     opacity: 0;
     display: inline-flex;
     align-items: center;
@@ -353,7 +354,6 @@ body {
     }
 
     .markdown-body pre {
-        margin-right: -4px;
         padding-top: 18px !important;
     }
 
