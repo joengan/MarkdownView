@@ -3,9 +3,8 @@ import { marked } from './libs/marked/17.0.4/marked.esm.js';
 const DOMPURIFY_SRC = './libs/dompurify/3.3.3/purify.min.js';
 const MERMAID_SRC = './libs/mermaid/11.12.0/mermaid.min.js';
 
-const MERMAID_CONFIG = {
+const MERMAID_BASE_CONFIG = {
     startOnLoad: false,
-    theme: 'default',
     fontFamily: '"Calibri", "Microsoft JhengHei", "Arial", "Microsoft YaHei", "Segoe UI", sans-serif',
     fontSize: 14,
     flowchart: {
@@ -55,8 +54,61 @@ const MERMAID_CONFIG = {
 };
 
 let mermaidInitialized = false;
+let initializedThemeName = null;
 let renderCounter = 0;
 let runtimeReadyPromise;
+
+function isDarkColorSchemePreferred() {
+    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
+}
+
+function getCssVariable(name, fallbackValue) {
+    const value = window.getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return value || fallbackValue;
+}
+
+function getMermaidConfig() {
+    const darkMode = isDarkColorSchemePreferred();
+
+    return {
+        ...MERMAID_BASE_CONFIG,
+        theme: darkMode ? 'dark' : 'default',
+        darkMode,
+        themeVariables: {
+            background: 'transparent',
+            primaryColor: getCssVariable('--surface-subtle', darkMode ? '#21262d' : '#f3f4f6'),
+            primaryTextColor: getCssVariable('--text-primary', darkMode ? '#f0f6fc' : '#1f2328'),
+            primaryBorderColor: getCssVariable('--border-default', darkMode ? '#30363d' : '#d0d7de'),
+            secondaryColor: getCssVariable('--surface-muted', darkMode ? '#161b22' : '#f6f8fa'),
+            secondaryTextColor: getCssVariable('--text-primary', darkMode ? '#f0f6fc' : '#1f2328'),
+            secondaryBorderColor: getCssVariable('--border-default', darkMode ? '#30363d' : '#d0d7de'),
+            tertiaryColor: getCssVariable('--surface-background', darkMode ? '#161b22' : '#ffffff'),
+            tertiaryTextColor: getCssVariable('--text-primary', darkMode ? '#f0f6fc' : '#1f2328'),
+            tertiaryBorderColor: getCssVariable('--border-default', darkMode ? '#30363d' : '#d0d7de'),
+            lineColor: getCssVariable('--text-secondary', darkMode ? '#9198a1' : '#57606a'),
+            textColor: getCssVariable('--text-primary', darkMode ? '#f0f6fc' : '#1f2328'),
+            mainBkg: getCssVariable('--surface-subtle', darkMode ? '#21262d' : '#f3f4f6'),
+            secondBkg: getCssVariable('--surface-muted', darkMode ? '#161b22' : '#f6f8fa'),
+            clusterBkg: getCssVariable('--surface-muted', darkMode ? '#161b22' : '#f6f8fa'),
+            clusterBorder: getCssVariable('--border-default', darkMode ? '#30363d' : '#d0d7de'),
+            nodeBorder: getCssVariable('--border-default', darkMode ? '#30363d' : '#d0d7de'),
+            defaultLinkColor: getCssVariable('--text-secondary', darkMode ? '#9198a1' : '#57606a'),
+            titleColor: getCssVariable('--text-primary', darkMode ? '#f0f6fc' : '#1f2328'),
+            edgeLabelBackground: getCssVariable('--surface-background', darkMode ? '#161b22' : '#ffffff'),
+            labelBackground: getCssVariable('--surface-background', darkMode ? '#161b22' : '#ffffff'),
+            actorBkg: getCssVariable('--surface-subtle', darkMode ? '#21262d' : '#f3f4f6'),
+            actorBorder: getCssVariable('--border-default', darkMode ? '#30363d' : '#d0d7de'),
+            actorTextColor: getCssVariable('--text-primary', darkMode ? '#f0f6fc' : '#1f2328'),
+            noteBkgColor: getCssVariable('--surface-muted', darkMode ? '#161b22' : '#f6f8fa'),
+            noteBorderColor: getCssVariable('--border-default', darkMode ? '#30363d' : '#d0d7de'),
+            noteTextColor: getCssVariable('--text-primary', darkMode ? '#f0f6fc' : '#1f2328'),
+            signalColor: getCssVariable('--text-secondary', darkMode ? '#9198a1' : '#57606a'),
+            signalTextColor: getCssVariable('--text-primary', darkMode ? '#f0f6fc' : '#1f2328'),
+            labelTextColor: getCssVariable('--text-primary', darkMode ? '#f0f6fc' : '#1f2328'),
+            fontFamily: MERMAID_BASE_CONFIG.fontFamily,
+        },
+    };
+}
 
 function getGlobalValue(name) {
     if (name === 'mermaid') {
@@ -194,12 +246,15 @@ function sanitizeHtml(html) {
 }
 
 function ensureMermaidInitialized() {
-    if (mermaidInitialized) {
+    const config = getMermaidConfig();
+
+    if (mermaidInitialized && initializedThemeName === config.theme) {
         return;
     }
 
-    getMermaid().initialize(MERMAID_CONFIG);
+    getMermaid().initialize(config);
     mermaidInitialized = true;
+    initializedThemeName = config.theme;
 }
 
 function processMarkdownInMermaid(mermaidCode) {

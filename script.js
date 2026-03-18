@@ -16,6 +16,8 @@ const urlParams = new URLSearchParams(window.location.search);
 const contentElement = document.getElementById('content');
 const fileNameDisplay = document.getElementById('fileNameDisplay');
 const downloadBtn = document.getElementById('downloadBtn');
+let currentMarkdownText = '';
+let renderRequestId = 0;
 
 function setMessage(title, message) {
     contentElement.innerHTML = `<h1>${title}</h1><p>${message}</p>`;
@@ -176,6 +178,51 @@ function attachCopyButtons() {
     });
 }
 
+async function renderContent(markdownText) {
+    currentMarkdownText = markdownText;
+    const requestId = ++renderRequestId;
+
+    contentElement.innerHTML = renderMarkdownToSafeHtml(markdownText);
+    await renderMermaidDiagrams(contentElement);
+
+    if (requestId !== renderRequestId) {
+        return;
+    }
+
+    attachCopyButtons();
+    hljs.highlightAll();
+}
+
+function installSystemThemeSync() {
+    if (!window.matchMedia) {
+        return;
+    }
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleThemeChange = async () => {
+        if (!currentMarkdownText) {
+            return;
+        }
+
+        await renderContent(currentMarkdownText);
+    };
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+        mediaQuery.addEventListener('change', () => {
+            handleThemeChange().catch((error) => {
+                setMessage('錯誤', error.message);
+            });
+        });
+        return;
+    }
+
+    mediaQuery.addListener(() => {
+        handleThemeChange().catch((error) => {
+            setMessage('錯誤', error.message);
+        });
+    });
+}
+
 async function boot() {
     const filePath = resolveFilePath();
 
@@ -209,10 +256,8 @@ async function boot() {
 
     const text = await response.text();
     await ensureRendererRuntime();
-    contentElement.innerHTML = renderMarkdownToSafeHtml(text);
-    await renderMermaidDiagrams(contentElement);
-    attachCopyButtons();
-    hljs.highlightAll();
+    await renderContent(text);
+    installSystemThemeSync();
 }
 
 boot().catch((err) => {
