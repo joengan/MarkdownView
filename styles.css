@@ -30,14 +30,14 @@ html {
 @media (prefers-color-scheme: dark) {
     :root {
         color-scheme: dark;
-        --page-background: linear-gradient(180deg, #161b22 0%, #1c2430 100%);
+        --page-background: linear-gradient(180deg, #0d1117 0%, #111827 100%);
         --page-foreground: #f0f6fc;
-        --surface-background: rgba(28, 34, 42, 0.94);
-        --surface-muted: #1f2630;
-        --surface-subtle: #2a313c;
+        --surface-background: rgba(22, 27, 34, 0.92);
+        --surface-muted: #161b22;
+        --surface-subtle: #21262d;
         --surface-danger: rgba(248, 81, 73, 0.12);
-        --border-default: #3d444d;
-        --border-muted: rgba(61, 68, 77, 0.88);
+        --border-default: #30363d;
+        --border-muted: rgba(48, 54, 61, 0.85);
         --text-primary: #f0f6fc;
         --text-secondary: #9198a1;
         --text-muted: rgba(240, 246, 252, 0.66);
