@@ -140,11 +140,18 @@ body {
 }
 
 .inline-code-wrapper {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
+    display: inline-block;
     position: relative;
     vertical-align: middle;
+}
+
+.inline-code-wrapper::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 100%;
+    width: 64px;
+    height: 100%;
 }
 
 .inline-code-wrapper code {
@@ -183,17 +190,28 @@ body {
 }
 
 .inline-code-wrapper .copy-code-btn {
-    position: static;
-    transform: none;
+    position: absolute;
+    top: 0;
+    left: 100%;
+    transform: translateX(6px);
     opacity: 0;
-    padding: 1px 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 45px;
+    height: 100%;
+    padding: 0 0px;
     font-size: 10px;
-    line-height: 1.4;
+    line-height: 1;
+    white-space: nowrap;
+    z-index: 20;
+    pointer-events: none;
 }
 
 .inline-code-wrapper:hover .copy-code-btn,
 .inline-code-wrapper:focus-within .copy-code-btn {
     opacity: 1;
+    pointer-events: auto;
 }
 
 .copy-code-btn:hover,

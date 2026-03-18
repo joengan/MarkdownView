@@ -128,7 +128,7 @@ function attachCopyButtons() {
             if (!text) return;
 
             navigator.clipboard.writeText(text).then(() => {
-                button.innerText = '已複製！';
+                button.innerText = '已複製';
                 setTimeout(() => {
                     button.innerText = '複製';
                 }, 1500);
