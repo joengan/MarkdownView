@@ -61,6 +61,43 @@ body {
     overflow-y: visible !important;
 }
 
+.markdown-body .code-block-container {
+    margin-top: 20px;
+    margin-bottom: 16px;
+}
+
+.markdown-body .code-block-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 38px;
+    padding: 8px 12px;
+    background-color: #f6f8fa;
+    border: 1px solid #d0d7de;
+    border-bottom: none;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+}
+
+.markdown-body .code-block-language {
+    min-width: 0;
+    color: #57606a;
+    font-size: 12px;
+    font-family: 'Segoe UI', sans-serif;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.markdown-body .code-block-container pre {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 16px !important;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
 .markdown-body pre code {
     font-family: 'Cascadia Code', 'Consolas', monospace;
 }
@@ -129,6 +166,14 @@ body {
     opacity: 0;
     transition: opacity 0.2s, background-color 0.2s, transform 0.2s;
     user-select: none;
+}
+
+.markdown-body .code-block-header .copy-code-btn {
+    position: static;
+    left: auto;
+    transform: none;
+    opacity: 1;
+    flex: 0 0 auto;
 }
 
 .markdown-body pre:hover .copy-code-btn,
@@ -205,6 +250,10 @@ body {
     .markdown-body pre {
         margin-right: -4px;
         padding-top: 18px !important;
+    }
+
+    .markdown-body .code-block-header {
+        padding: 8px 10px;
     }
 
     .copy-code-btn {

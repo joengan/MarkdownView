@@ -44,6 +44,78 @@ function isSupportedMarkdownFile(filePath) {
     return supportedMarkdownExtensions.some((extension) => normalizedFilePath.endsWith(extension));
 }
 
+function formatCodeLanguageLabel(language) {
+    if (!language) {
+        return '';
+    }
+
+    const normalized = language.trim().toLowerCase();
+
+    if (!normalized) {
+        return '';
+    }
+
+    const languageAliases = {
+        js: 'JavaScript',
+        jsx: 'JSX',
+        ts: 'TypeScript',
+        tsx: 'TSX',
+        html: 'HTML',
+        xml: 'XML',
+        css: 'CSS',
+        scss: 'SCSS',
+        sass: 'Sass',
+        less: 'Less',
+        json: 'JSON',
+        yaml: 'YAML',
+        yml: 'YAML',
+        md: 'Markdown',
+        sh: 'Shell',
+        bash: 'Bash',
+        ps1: 'PowerShell',
+        powershell: 'PowerShell',
+        py: 'Python',
+        rb: 'Ruby',
+        php: 'PHP',
+        go: 'Go',
+        rs: 'Rust',
+        java: 'Java',
+        kt: 'Kotlin',
+        kts: 'Kotlin',
+        cs: 'C#',
+        cpp: 'C++',
+        cxx: 'C++',
+        cc: 'C++',
+        c: 'C',
+        sql: 'SQL',
+        plaintext: 'Plain Text',
+        text: 'Plain Text',
+        txt: 'Plain Text',
+        dockerfile: 'Dockerfile',
+        mermaid: 'Mermaid',
+    };
+
+    if (languageAliases[normalized]) {
+        return languageAliases[normalized];
+    }
+
+    return normalized
+        .split(/[-_\s]+/)
+        .filter(Boolean)
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ');
+}
+
+function getCodeBlockLanguageLabel(code) {
+    const classNames = Array.from(code.classList);
+    const languageClass = classNames.find((className) => /^(?:language|lang)-/i.test(className));
+    const rawLanguage = languageClass
+        ? languageClass.replace(/^(?:language|lang)-/i, '')
+        : code.dataset.language || code.getAttribute('data-language') || '';
+
+    return formatCodeLanguageLabel(rawLanguage);
+}
+
 function attachCopyButtons() {
     const createCopyButton = (getText) => {
         const button = document.createElement('button');
@@ -71,10 +143,24 @@ function attachCopyButtons() {
         const isBlockCode = pre && pre.tagName === 'PRE';
 
         if (isBlockCode) {
-            if (pre.querySelector(':scope > .copy-code-btn')) return;
+            if (pre.parentElement && pre.parentElement.classList.contains('code-block-container')) return;
 
             if (!pre.hasAttribute('tabindex')) pre.setAttribute('tabindex', '0');
-            pre.prepend(createCopyButton(() => code.textContent));
+
+            const container = document.createElement('div');
+            container.className = 'code-block-container';
+
+            const header = document.createElement('div');
+            header.className = 'code-block-header';
+
+            const languageLabel = document.createElement('span');
+            languageLabel.className = 'code-block-language';
+            languageLabel.textContent = getCodeBlockLanguageLabel(code);
+
+            header.append(languageLabel, createCopyButton(() => code.textContent));
+
+            pre.parentNode.insertBefore(container, pre);
+            container.append(header, pre);
             return;
         }
 
