@@ -1,6 +1,17 @@
 import hljs from './libs/highlightjs/11.11.1/highlight.min.js';
 import { ensureRendererRuntime, renderMarkdownToSafeHtml, renderMermaidDiagrams } from './mermaid-renderer.js';
 
+const supportedMarkdownExtensions = Object.freeze([
+    '.md',
+    '.markdown',
+    '.mdown',
+    '.mkd',
+    '.mkdn',
+    '.mdwn',
+    '.mdtxt',
+    '.mdtext'
+]);
+
 const urlParams = new URLSearchParams(window.location.search);
 const contentElement = document.getElementById('content');
 const fileNameDisplay = document.getElementById('fileNameDisplay');
@@ -22,6 +33,15 @@ function resolveFilePath() {
     } catch {
         return rawFilePath;
     }
+}
+
+function getFilePathForExtensionCheck(filePath) {
+    return filePath.split('#')[0].split('?')[0].toLowerCase();
+}
+
+function isSupportedMarkdownFile(filePath) {
+    const normalizedFilePath = getFilePathForExtensionCheck(filePath);
+    return supportedMarkdownExtensions.some((extension) => normalizedFilePath.endsWith(extension));
 }
 
 function attachCopyButtons() {
@@ -77,6 +97,14 @@ async function boot() {
         fileNameDisplay.textContent = '未指定檔案';
         downloadBtn.removeAttribute('href');
         setMessage('錯誤', `缺少 file 參數，無法載入 Markdown。當前查詢字串：${window.location.search || '(空)'}`);
+        return;
+    }
+
+    if (!isSupportedMarkdownFile(filePath)) {
+        const extensionList = supportedMarkdownExtensions.join(', ');
+        fileNameDisplay.textContent = '不支援的檔案類型';
+        downloadBtn.removeAttribute('href');
+        setMessage('錯誤', `目前僅支援以下 Markdown 副檔名：${extensionList}`);
         return;
     }
 

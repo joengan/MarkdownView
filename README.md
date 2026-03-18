@@ -1,7 +1,7 @@
 # MarkdownView
 
 在 IIS 內網環境中，直接於瀏覽器閱覽 Markdown 文件的輕量檢視工具。  
-搭配 IIS 目錄瀏覽功能，點擊 `.md` 檔案即可自動渲染為 GitHub 風格的 HTML 頁面，無需額外安裝編輯器或桌面應用程式。
+搭配 IIS 目錄瀏覽功能，點擊常見的 Markdown 副檔名檔案即可自動渲染為 GitHub 風格的 HTML 頁面，無需額外安裝編輯器或桌面應用程式。
 
 ---
 
@@ -12,7 +12,8 @@
 - **Mermaid 圖表支援** — 內建 [Mermaid](https://mermaid.js.org/) 渲染引擎，支援流程圖、序列圖、甘特圖等多種圖表語法。
 - **一鍵複製程式碼** — 程式碼區塊（含行內程式碼）皆附有「複製」按鈕，hover 時顯示。
 - **XSS 防護** — 透過 [DOMPurify](https://github.com/cure53/DOMPurify) 過濾所有 HTML 輸出，避免注入攻擊。
-- **下載原始檔案** — 工具列提供「下載檔案」按鈕，可直接下載原始 `.md` 檔。
+- **多副檔名支援** — 支援 `.md`、`.markdown`、`.mdown`、`.mkd`、`.mkdn`、`.mdwn`、`.mdtxt`、`.mdtext`，並以全小寫比對處理大寫副檔名。
+- **下載原始檔案** — 工具列提供「下載檔案」按鈕，可直接下載原始 Markdown 檔。
 - **RWD 響應式設計** — 桌面與行動裝置皆有良好閱讀版面。
 - **完全離線運作** — 所有前端函式庫皆收納於 `libs/` 目錄，無需連外網。
 
@@ -21,9 +22,11 @@
 ## 運作原理
 
 1. IIS 開啟**目錄瀏覽**功能後，使用者可看到資料夾中的所有檔案列表。
-2. 透過 **URL Rewrite** 規則，當使用者點擊任何 `.md` 檔案時，自動重導至 `MarkdownView/index.html?file=<原始路徑>`。
+2. 透過 **URL Rewrite** 規則，當使用者點擊任何支援的 Markdown 副檔名檔案時，自動重導至 `MarkdownView/index.html?file=<原始路徑>`。
 3. 前端 JavaScript 以 `fetch` 取得原始 Markdown 內容（透過 `?raw=1` 查詢參數繞過重寫規則），再經由 [marked](https://github.com/markedjs/marked) 解析為 HTML。
 4. HTML 經 DOMPurify 消毒後顯示，並依序執行 Mermaid 圖表渲染、程式碼高亮及複製按鈕掛載。
+
+目前預設支援的副檔名如下：`.md`、`.markdown`、`.mdown`、`.mkd`、`.mkdn`、`.mdwn`、`.mdtxt`、`.mdtext`。
 
 ---
 
@@ -73,22 +76,38 @@ C:\inetpub\wwwroot\MarkdownView\
     <!-- 啟用目錄瀏覽 -->
     <directoryBrowse enabled="true" showFlags="Date, Time, Size, Extension, LongDate" />
 
-    <!-- 註冊 .md MIME Type -->
+    <!-- 註冊常見 Markdown MIME Type -->
     <staticContent>
       <remove fileExtension=".md" />
+      <remove fileExtension=".markdown" />
+      <remove fileExtension=".mdown" />
+      <remove fileExtension=".mkd" />
+      <remove fileExtension=".mkdn" />
+      <remove fileExtension=".mdwn" />
+      <remove fileExtension=".mdtxt" />
+      <remove fileExtension=".mdtext" />
       <mimeMap fileExtension=".md" mimeType="text/markdown; charset=utf-8; variant=GFM" />
+      <mimeMap fileExtension=".markdown" mimeType="text/markdown; charset=utf-8; variant=GFM" />
+      <mimeMap fileExtension=".mdown" mimeType="text/markdown; charset=utf-8; variant=GFM" />
+      <mimeMap fileExtension=".mkd" mimeType="text/markdown; charset=utf-8; variant=GFM" />
+      <mimeMap fileExtension=".mkdn" mimeType="text/markdown; charset=utf-8; variant=GFM" />
+      <mimeMap fileExtension=".mdwn" mimeType="text/markdown; charset=utf-8; variant=GFM" />
+      <mimeMap fileExtension=".mdtxt" mimeType="text/markdown; charset=utf-8; variant=GFM" />
+      <mimeMap fileExtension=".mdtext" mimeType="text/markdown; charset=utf-8; variant=GFM" />
     </staticContent>
 
-    <!-- URL Rewrite：將 .md 請求重導至 MarkdownView -->
+    <!-- URL Rewrite：將支援的 Markdown 請求重導至 MarkdownView -->
     <rewrite>
       <rules>
         <rule name="MarkdownReader" stopProcessing="true">
-          <match url=".*\.md$" />
+          <match url=".*" />
           <conditions>
             <!-- 帶有 raw=1 參數時不重寫，允許直接取得原始檔 -->
-            <add input="{QUERY_STRING}" pattern="raw=1" negate="true" />
+            <add input="{QUERY_STRING}" pattern="(^|&)raw=1(&|$)" negate="true" />
             <!-- 排除 MarkdownView 自身目錄，避免無限迴圈 -->
-            <add input="{URL}" pattern="MarkdownView/" negate="true" />
+            <add input="{ToLower:{URL}}" pattern="markdownview/" negate="true" />
+            <!-- 先轉小寫再比對副檔名，支援 .MD 之類的大寫寫法 -->
+            <add input="{ToLower:{URL}}" pattern="\.(md|markdown|mdown|mkd|mkdn|mdwn|mdtxt|mdtext)$" />
           </conditions>
           <action type="Redirect" url="/MarkdownView/index.html?file={REQUEST_URI}" appendQueryString="false" />
         </rule>
@@ -111,12 +130,12 @@ C:\inetpub\wwwroot\MarkdownView\
 
 ## 使用方式
 
-部署完成後，直接在瀏覽器中瀏覽 IIS 網站目錄，點擊任何 `.md` 檔案，即可自動以 MarkdownView 渲染閱覽。
+部署完成後，直接在瀏覽器中瀏覽 IIS 網站目錄，點擊任何支援的 Markdown 副檔名檔案，即可自動以 MarkdownView 渲染閱覽。
 
 也可手動輸入 URL 存取特定檔案：
 
 ```
-https://<your-server>/MarkdownView/index.html?file=/path/to/document.md
+https://<your-server>/MarkdownView/index.html?file=/path/to/document.markdown
 ```
 
 ---
@@ -138,7 +157,7 @@ https://<your-server>/MarkdownView/index.html?file=/path/to/document.md
 ```
 MarkdownView/
 ├── index.html              # 主頁面，載入樣式與腳本
-├── script.js               # 核心邏輯：讀取 .md、渲染、高亮、複製按鈕
+├── script.js               # 核心邏輯：讀取 Markdown、驗證副檔名、渲染、高亮、複製按鈕
 ├── mermaid-renderer.js     # Mermaid 圖表渲染與 Markdown 解析模組
 ├── styles.css              # 版面樣式與響應式設計
 ├── web.config              # IIS 設定範本（MIME Type + URL Rewrite）
