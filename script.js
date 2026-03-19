@@ -41,6 +41,22 @@ function getFilePathForExtensionCheck(filePath) {
     return filePath.split('#')[0].split('?')[0].toLowerCase();
 }
 
+function createCacheBuster() {
+    return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function buildFileRequestUrl(filePath, cacheBuster) {
+    const requestUrl = new URL(filePath, window.location.href);
+    requestUrl.hash = '';
+    requestUrl.searchParams.set('raw', '1');
+
+    if (cacheBuster) {
+        requestUrl.searchParams.set('_', cacheBuster);
+    }
+
+    return requestUrl.toString();
+}
+
 function isSupportedMarkdownFile(filePath) {
     const normalizedFilePath = getFilePathForExtensionCheck(filePath);
     return supportedMarkdownExtensions.some((extension) => normalizedFilePath.endsWith(extension));
@@ -245,11 +261,12 @@ async function boot() {
     document.title = fileName;
     fileNameDisplay.textContent = fileName;
 
-    const bypassUrl = filePath + (filePath.includes('?') ? '&' : '?') + 'raw=1';
+    const cacheBuster = createCacheBuster();
+    const bypassUrl = buildFileRequestUrl(filePath, cacheBuster);
     downloadBtn.href = bypassUrl;
     downloadBtn.download = fileName;
 
-    const response = await fetch(bypassUrl);
+    const response = await fetch(bypassUrl, { cache: 'no-store' });
     if (!response.ok) {
         throw new Error(`檔案讀取失敗：${response.status} ${response.statusText}`);
     }
