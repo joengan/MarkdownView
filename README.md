@@ -156,11 +156,12 @@ https://<your-server>/MarkdownView/index.html?file=/path/to/document.markdown
 
 ```
 MarkdownView/
+├── version.json            # 專案版號，供 GitHub Actions 發佈流程讀取
 ├── index.html              # 主頁面，載入樣式與腳本
 ├── script.js               # 核心邏輯：讀取 Markdown、驗證副檔名、渲染、高亮、複製按鈕
 ├── mermaid-renderer.js     # Mermaid 圖表渲染與 Markdown 解析模組
 ├── styles.css              # 版面樣式與響應式設計
-├── web.config              # IIS 設定範本（MIME Type + URL Rewrite）
+├── web.config.example      # IIS 設定範本（MIME Type + URL Rewrite）
 ├── LICENSE                 # MIT 授權條款
 ├── README.md               # 本說明文件
 └── libs/                   # 前端函式庫（離線使用）
@@ -171,6 +172,19 @@ MarkdownView/
     ├── marked/             # Markdown 解析器
     └── mermaid/            # 圖表引擎
 ```
+
+---
+
+## 版本與發佈
+
+- 專案版號儲存在 `version.json`。
+- 版號不會顯示在頁面上，只供 GitHub Actions 發佈流程使用。
+- 推送到 `main` 或手動執行 workflow 時：
+  - 若 `version.json` 的版號尚未有對應 Git tag，會建立正式 release，例如 `v0.0.1`。
+  - 若版號未變動且 tag 已存在，會更新 `latest-test` 預發佈版本，方便驗證最新內容。
+- workflow 位置：`.github/workflows/release.yml`
+
+若要發佈新正式版，只需修改 `version.json` 內的 `version` 值後推送即可。
 
 ---
 

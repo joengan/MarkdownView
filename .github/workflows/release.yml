@@ -1,0 +1,107 @@
+name: Build and Release MarkdownView
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build_release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: 1. 檢出程式碼
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 2. 讀取版本並判斷發佈狀態
+        id: check_version
+        shell: bash
+        run: |
+          if [ ! -f version.json ]; then
+            echo "Error: version.json not found"
+            exit 1
+          fi
+
+          CURRENT_VERSION=$(python3 -c "import json; print(json.load(open('version.json', encoding='utf-8'))['version'])")
+
+          if [ -z "$CURRENT_VERSION" ]; then
+            echo "Error: version is empty"
+            exit 1
+          fi
+
+          echo "VERSION=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
+
+          if git rev-parse "v$CURRENT_VERSION" >/dev/null 2>&1; then
+            echo "IS_NEW_RELEASE=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "IS_NEW_RELEASE=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 3. 打包發佈檔案
+        id: package
+        shell: bash
+        run: |
+          VERSION="${{ steps.check_version.outputs.VERSION }}"
+          BUILD_TEMP="$(mktemp -d)"
+          PACKAGE_ROOT="$BUILD_TEMP/MarkdownView"
+
+          mkdir -p "$PACKAGE_ROOT"
+
+          cp -R . "$PACKAGE_ROOT/"
+          rm -rf "$PACKAGE_ROOT/.git" "$PACKAGE_ROOT/.github"
+          rm -f "$PACKAGE_ROOT/MarkdownView.code-workspace"
+
+          cd "$BUILD_TEMP"
+          tar -czf "$GITHUB_WORKSPACE/MarkdownView-v$VERSION.tar.gz" MarkdownView
+          zip -qr "$GITHUB_WORKSPACE/MarkdownView-v$VERSION.zip" MarkdownView
+
+          cd "$GITHUB_WORKSPACE"
+          cp "MarkdownView-v$VERSION.tar.gz" MarkdownView-latest-test.tar.gz
+          cp "MarkdownView-v$VERSION.zip" MarkdownView-latest-test.zip
+
+      - name: 4. 清理舊測試版標籤
+        if: success()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          gh release delete latest-test --yes || true
+          git push --delete origin latest-test || true
+
+      - name: 5a. 發佈正式版本
+        if: steps.check_version.outputs.IS_NEW_RELEASE == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.check_version.outputs.VERSION }}
+          name: Release v${{ steps.check_version.outputs.VERSION }}
+          body: |
+            正式版本已建立。
+
+            版本號來自 version.json，已發佈 MarkdownView v${{ steps.check_version.outputs.VERSION }}。
+          files: |
+            MarkdownView-v${{ steps.check_version.outputs.VERSION }}.tar.gz
+            MarkdownView-v${{ steps.check_version.outputs.VERSION }}.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 5b. 發佈測試版本
+        if: steps.check_version.outputs.IS_NEW_RELEASE == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest-test
+          name: Latest Test Build
+          prerelease: true
+          body: |
+            版本號未變動，因此本次產出 latest-test 測試版。
+
+            如需正式版，請先更新 version.json 的 version 欄位。
+          files: |
+            MarkdownView-latest-test.tar.gz
+            MarkdownView-latest-test.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
