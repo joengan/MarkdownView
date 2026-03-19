@@ -155,23 +155,31 @@ body {
     right: 24px;
     bottom: 24px;
     z-index: 1000;
-    min-width: 136px;
-    padding: 12px 16px;
-    border: 1px solid var(--border-default);
-    border-radius: 999px;
-    background: var(--surface-background);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    height: auto;
+    padding: 6px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
     color: var(--text-primary);
-    font-size: 14px;
-    font-weight: 700;
+    font-size: 28px;
+    line-height: 1;
     cursor: pointer;
-    box-shadow: var(--shadow-soft);
-    backdrop-filter: blur(16px);
-    transition: transform 0.2s, border-color 0.2s, background-color 0.2s;
+    box-shadow: none;
+    backdrop-filter: none;
+    transition: transform 0.2s, opacity 0.2s;
+}
+
+.view-toggle-btn::before {
+    content: attr(data-icon);
 }
 
 .view-toggle-btn:hover {
     transform: translateY(-1px);
-    border-color: var(--accent);
+    opacity: 0.82;
 }
 
 .markdown-body a {
@@ -433,7 +441,7 @@ body {
     .view-toggle-btn {
         right: 16px;
         bottom: 16px;
-        min-width: 120px;
-        padding: 11px 14px;
+        padding: 4px;
+        font-size: 24px;
     }
 }

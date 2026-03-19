@@ -32,9 +32,14 @@ function updateViewToggleButton() {
         return;
     }
 
+    const nextViewLabel = currentViewMode === 'markdown' ? '切換為 TXT 檢視' : '切換為 Markdown 檢視';
+    const nextViewIcon = currentViewMode === 'markdown' ? '📝' : '📄';
+
     viewToggleBtn.hidden = !hasLoadedContent;
-    viewToggleBtn.textContent = currentViewMode === 'markdown' ? '切換為 TXT' : '切換為 Markdown';
-    viewToggleBtn.setAttribute('aria-label', viewToggleBtn.textContent);
+    viewToggleBtn.textContent = '';
+    viewToggleBtn.dataset.icon = nextViewIcon;
+    viewToggleBtn.title = nextViewLabel;
+    viewToggleBtn.setAttribute('aria-label', nextViewLabel);
 }
 
 function captureViewportState() {
