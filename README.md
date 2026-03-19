@@ -56,7 +56,6 @@ C:\inetpub\wwwroot\MarkdownView\
 ├── script.js
 ├── styles.css
 ├── mermaid-renderer.js
-├── web.config
 └── libs\
     ├── dompurify\
     ├── github-markdown-css\
