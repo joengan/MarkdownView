@@ -16,11 +16,42 @@ const urlParams = new URLSearchParams(window.location.search);
 const contentElement = document.getElementById('content');
 const fileNameDisplay = document.getElementById('fileNameDisplay');
 const downloadBtn = document.getElementById('downloadBtn');
+const viewToggleBtn = document.getElementById('viewToggleBtn');
 let currentMarkdownText = '';
+let renderedMarkdownHtml = '';
+let currentViewMode = 'markdown';
+let hasLoadedContent = false;
 let renderRequestId = 0;
 
 function setMessage(title, message) {
     contentElement.innerHTML = `<h1>${title}</h1><p>${message}</p>`;
+}
+
+function updateViewToggleButton() {
+    if (!viewToggleBtn) {
+        return;
+    }
+
+    viewToggleBtn.hidden = !hasLoadedContent;
+    viewToggleBtn.textContent = currentViewMode === 'markdown' ? '切換為 TXT' : '切換為 Markdown';
+    viewToggleBtn.setAttribute('aria-label', viewToggleBtn.textContent);
+}
+
+function captureViewportState() {
+    return {
+        scrollX: window.scrollX,
+        scrollY: window.scrollY,
+    };
+}
+
+function restoreViewportState(viewportState) {
+    window.scrollTo(viewportState.scrollX, viewportState.scrollY);
+}
+
+function waitForNextFrame() {
+    return new Promise((resolve) => {
+        window.requestAnimationFrame(() => resolve());
+    });
 }
 
 function resolveFilePath() {
@@ -196,9 +227,27 @@ function attachCopyButtons() {
 
 async function renderContent(markdownText) {
     currentMarkdownText = markdownText;
+    hasLoadedContent = true;
+    renderedMarkdownHtml = renderMarkdownToSafeHtml(markdownText);
+    await switchView('markdown');
+}
+
+function renderRawTextView() {
+    renderRequestId += 1;
+    contentElement.classList.add('raw-text-mode');
+    contentElement.replaceChildren();
+
+    const pre = document.createElement('pre');
+    pre.className = 'raw-text-content';
+    pre.textContent = currentMarkdownText;
+    contentElement.appendChild(pre);
+}
+
+async function renderMarkdownView() {
     const requestId = ++renderRequestId;
 
-    contentElement.innerHTML = renderMarkdownToSafeHtml(markdownText);
+    contentElement.classList.remove('raw-text-mode');
+    contentElement.innerHTML = renderedMarkdownHtml;
     await renderMermaidDiagrams(contentElement);
 
     if (requestId !== renderRequestId) {
@@ -209,6 +258,40 @@ async function renderContent(markdownText) {
     hljs.highlightAll();
 }
 
+async function switchView(viewMode) {
+    if (!hasLoadedContent || currentViewMode === viewMode) {
+        updateViewToggleButton();
+        return;
+    }
+
+    const viewportState = captureViewportState();
+    currentViewMode = viewMode;
+    updateViewToggleButton();
+
+    if (viewMode === 'markdown') {
+        await renderMarkdownView();
+    } else {
+        renderRawTextView();
+    }
+
+    await waitForNextFrame();
+    restoreViewportState(viewportState);
+}
+
+function installViewToggle() {
+    if (!viewToggleBtn) {
+        return;
+    }
+
+    viewToggleBtn.addEventListener('click', () => {
+        const nextViewMode = currentViewMode === 'markdown' ? 'raw' : 'markdown';
+
+        switchView(nextViewMode).catch((error) => {
+            setMessage('錯誤', error.message);
+        });
+    });
+}
+
 function installSystemThemeSync() {
     if (!window.matchMedia) {
         return;
@@ -216,11 +299,16 @@ function installSystemThemeSync() {
 
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleThemeChange = async () => {
-        if (!currentMarkdownText) {
+        if (!hasLoadedContent) {
             return;
         }
 
-        await renderContent(currentMarkdownText);
+        if (currentViewMode === 'markdown') {
+            const viewportState = captureViewportState();
+            await renderMarkdownView();
+            await waitForNextFrame();
+            restoreViewportState(viewportState);
+        }
     };
 
     if (typeof mediaQuery.addEventListener === 'function') {
@@ -240,6 +328,8 @@ function installSystemThemeSync() {
 }
 
 async function boot() {
+    installViewToggle();
+
     const filePath = resolveFilePath();
 
     if (!filePath) {
@@ -273,6 +363,7 @@ async function boot() {
 
     const text = await response.text();
     await ensureRendererRuntime();
+    currentViewMode = 'raw';
     await renderContent(text);
     installSystemThemeSync();
 }
